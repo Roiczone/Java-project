@@ -6,9 +6,8 @@ public class Member {
     private String memberId;
     private List<Book> borrowedBooks;
 
-    public Member(String name, String memberId) {
+    public Member(String name) {
         this.name = name;
-        this.memberId = memberId;
         this.borrowedBooks = new ArrayList<>();
     }
 

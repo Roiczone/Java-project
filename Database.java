@@ -102,28 +102,72 @@ public class Database {
     }
 
     public static void addMember(String name) {
-        String sql = "INSERT INTO members(name) VALUES(?)";
+        String sql = "INSERT INTO members(name) VALUES(?)"; // ID will be auto-generated
+
         try (Connection conn = DriverManager.getConnection(URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, name);
-            pstmt.executeUpdate();
-            System.out.println("Member added to database.");
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setString(1, name); // Set member name
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Retrieve the auto-generated ID
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int generatedId = generatedKeys.getInt(1);
+                        System.out.println("Member added with ID: " + generatedId);
+                    }
+                }
+            } else {
+                System.out.println("Failed to add member.");
+            }
+
         } catch (SQLException e) {
             System.out.println("Error adding member: " + e.getMessage());
         }
     }
 
-    // DELETE a Member by ID
-    // DELETE a Member by ID
-    public static void deleteMember(String id) {
-        String sql = "DELETE FROM members WHERE id = ?";
+    public static Member findMemberById(int memberId) {
+        String sql = "SELECT * FROM members WHERE id = ?";
+
         try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            pstmt.executeUpdate();
-            System.out.println("Member deleted from database.");
+
+            pstmt.setInt(1, memberId); // Set the member ID parameter
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Create and return a Member object from the retrieved data
+                String name = rs.getString("name");
+                return new Member(name);
+            }
+
         } catch (SQLException e) {
-            System.out.println("Error deleting member: " + e.getMessage());
+            System.out.println("Error finding member: " + e.getMessage());
+        }
+
+        return null; // Return null if no member found
+    }
+
+    // DELETE a Member by ID
+    // DELETE a Member by ID
+    public static void removeMember(int memberId) {
+        String sql = "DELETE FROM members WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, memberId); // Set the member ID to delete
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("Member removed successfully with ID: " + memberId);
+            } else {
+                System.out.println("No member found with ID: " + memberId);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error removing member: " + e.getMessage());
         }
     }
 
@@ -142,13 +186,36 @@ public class Database {
         }
     }
 
+    public static void showMembers() {
+        String sql = "SELECT * FROM members";
+        System.out.println(sql);
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+
+                // Display member details
+                System.out.println(id + ". " + name);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving members: " + e.getMessage());
+        }
+    }
+
+
     public static void main(String[] args) {
         connect();
         createTables();
         addBook("Java Programming", "James Gosling");
         //addMember("Alice");
         //deleteMember("1");
-        showBooks();
+        //showBooks();
+
     }
 
 }

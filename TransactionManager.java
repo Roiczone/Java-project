@@ -11,7 +11,7 @@ public class TransactionManager {
     }
 
     // Return a book
-    public static void returnBook(String transactionId, LocalDate returnDate) {
+    public static void returnBook(int transactionId, LocalDate returnDate) {
         for (Transaction transaction : transactions) {
             if (transaction.getTransactionId().equals(transactionId) && transaction.getType().equals("Borrow")) {
                 transaction.returnBook(returnDate);

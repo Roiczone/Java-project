@@ -20,7 +20,8 @@ public class Gui {
             System.out.println("6. Return Book");
             System.out.println("7. Show Books");
             System.out.println("8. Show Transactions");
-            System.out.println("9. Exit");
+            System.out.println("9. Show All members");
+            System.out.println("10. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();  // Consume newline
@@ -47,20 +48,19 @@ public class Gui {
                         //librarian.removeBook(bookToDelete); // Remove from librarian's collection
                         //library.removeBook(bookToDelete);   // Remove from library's collection
                         Database.deleteBook(bookId);       // Remove from database
-                        System.out.println("Book deleted successfully.");
                     } else {
-                        System.out.println("No book found with the given Name.");
+                        System.out.println("");
                     }
                     break;
 
                 case 3:
                     System.out.print("Enter member name: ");
                     String name = scanner.nextLine();
-                    System.out.print("Enter member ID: ");
-                    String memberId = scanner.nextLine();
-                    Member member = new Member(name, memberId);
-                    library.addMember(member);
-                    Database.addMember(name);
+//                    System.out.print("Enter member ID: ");
+//                    String memberId = scanner.nextLine();
+                    Member member = new Member(name);
+//                    library.addMember(member);
+                    Database.addMember(member.getName());
                     break;
 
                 case 4:
@@ -68,12 +68,11 @@ public class Gui {
                     String memberIdToDelete = scanner.nextLine();
 
                     // Get the member by ID from the library (assuming such a method exists)
-                    Member memberToDelete = library.findMemberById(memberIdToDelete);
+                    Member memberToDelete = Database.findMemberById(Integer.parseInt(memberIdToDelete));
 
                     if (memberToDelete != null) {
-                        librarian.removeMember(memberToDelete);   // Remove from library
-                        Database.deleteMember(memberIdToDelete); // Remove from database
-                        System.out.println("Member deleted successfully.");
+                        //librarian.removeMember(memberToDelete);   // Remove from library
+                        Database.removeMember(Integer.parseInt(memberIdToDelete)); // Remove from database
                     } else {
                         System.out.println("No member found with the given ID.");
                     }
@@ -91,7 +90,7 @@ public class Gui {
                     System.out.print("Enter book title to borrow: ");
                     String borrowTitle = scanner.nextLine();
                     bookId = scanner.nextInt();
-                    Book borrowBook = library.findBookByTitle(borrowTitle);
+                    Book borrowBook = Database.findBookById(bookId);
                     System.out.print("Enter borrowing days: ");
                     int dueDays = scanner.nextInt();
                     scanner.nextLine();
@@ -115,8 +114,8 @@ public class Gui {
                         break;
                     }
                     System.out.print("Enter book title to return: ");
-                    String returnTitle = scanner.nextLine();
-                    Book returnBook = library.findBookByTitle(returnTitle);
+                    bookId = scanner.nextInt();
+                    Book returnBook = Database.findBookById(bookId);
                     if (returnBook == null) {
                         System.out.println("Book not found!");
                     } else {
@@ -124,7 +123,7 @@ public class Gui {
                         System.out.print("Enter return date (YYYY-MM-DD): ");
                         String dateInput = scanner.nextLine();
                         LocalDate returnDate = LocalDate.parse(dateInput);
-                        TransactionManager.returnBook(returnTitle, returnDate);
+                        TransactionManager.returnBook(bookId, returnDate);
                     }
                     break;
 
@@ -137,16 +136,21 @@ public class Gui {
                     System.out.println("All Transactions:");
                     librarian.ShowTransactions();
                     break;
-
                 case 9:
+                    System.out.println("Show all Members");
+                    Database.showMembers();
+                    break;
+
+                case 10:
                     System.out.println("Exiting system. Goodbye!");
                     break;
+
 
 
                 default:
                     System.out.println("Invalid choice, please try again.");
             }
-        } while (choice != 9);
+        } while (choice != 10);
 
         scanner.close();
     }
