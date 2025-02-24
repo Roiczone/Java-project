@@ -3,7 +3,13 @@ import java.sql.*;
 public class Database {
     private static final String URL = "jdbc:sqlite:library.db";
 
+
     public static void connect() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            System.out.println("SQLite JDBC Driver not found.");
+        }
         try (Connection conn = DriverManager.getConnection(URL)) {
             if (conn != null) {
                 System.out.println("Connected to SQLite database.");
@@ -43,6 +49,22 @@ public class Database {
         }
     }
 
+    public static void deleteBook(String id) {
+        String sql = "DELETE FROM books WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, id);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Book deleted successfully.");
+            } else {
+                System.out.println("No book found with the given ID.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error deleting book: " + e.getMessage());
+        }
+    }
+
     public static void addMember(String id, String name) {
         String sql = "INSERT INTO members(id, name) VALUES(?, ?)";
         try (Connection conn = DriverManager.getConnection(URL);
@@ -55,6 +77,20 @@ public class Database {
             System.out.println("Error adding member: " + e.getMessage());
         }
     }
+
+    // DELETE a Member by ID
+    public static void deleteMember(String id) {
+        String sql = "DELETE FROM members WHERE (id) VALUES(?)";
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, id);
+            pstmt.executeUpdate();
+            System.out.println("Member deleted from database.");
+        } catch (SQLException e) {
+            System.out.println("Error deleting member: " + e.getMessage());
+        }
+    }
+
 
     public static void showBooks() {
         String sql = "SELECT * FROM books";
@@ -74,6 +110,7 @@ public class Database {
         createTables();
         addBook("1", "Java Programming", "James Gosling");
         addMember("M001", "Alice");
+        deleteMember("1");
         showBooks();
     }
 }

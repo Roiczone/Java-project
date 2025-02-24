@@ -11,11 +11,20 @@ public class Library {
     }
 
     public void addBook(Book book) { books.add(book); }
+    public void removeBook(Book book) { books.remove(book); }
     public void addMember(Member member) { members.add(member); }
+    public void deleteMember(Member member) { members.remove(member); }
+
+    public Book findBookById(int id) {
+        for (Book book : books) {
+            if (book.getId().equals(id)) return book;
+        }
+        return null;
+    }
 
     public Book findBookByTitle(String title) {
         for (Book book : books) {
-            if (book.getTitle().equalsIgnoreCase(title)) return book;
+            if (book.getTitle().equals(title)) return book;
         }
         return null;
     }
@@ -26,4 +35,5 @@ public class Library {
         }
         return null;
     }
+
 }

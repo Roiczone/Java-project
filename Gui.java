@@ -4,18 +4,20 @@ public class Gui {
     private static Library library = new Library();
     private static Librarian librarian = new Librarian("John Doe", "L001");
 
-    public static void main(String[] args) {
+    public static void main() {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
         do {
             System.out.println("\n===== Library Management System =====");
             System.out.println("1. Add Book");
-            System.out.println("2. Add Member");
-            System.out.println("3. Borrow Book");
-            System.out.println("4. Return Book");
-            System.out.println("5. Show Books");
-            System.out.println("6. Exit");
+            System.out.println("2. delete Book");
+            System.out.println("3. Add Member");
+            System.out.println("4. Delete member");
+            System.out.println("5. Borrow Book");
+            System.out.println("6. Return Book");
+            System.out.println("7. Show Books");
+            System.out.println("8. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();  // Consume newline
@@ -33,6 +35,22 @@ public class Gui {
                     break;
 
                 case 2:
+                    System.out.print("Enter book Name to delete: ");
+                    String bookTitle = scanner.nextLine();
+
+                    Book bookToDelete = library.findBookByTitle(bookTitle);
+
+                    if (bookToDelete != null) {
+                        librarian.removeBook(bookToDelete); // Remove from librarian's collection
+                        library.removeBook(bookToDelete);   // Remove from library's collection
+                        Database.deleteBook(bookTitle);       // Remove from database
+                        System.out.println("Book deleted successfully.");
+                    } else {
+                        System.out.println("No book found with the given Name.");
+                    }
+                    break;
+
+                case 3:
                     System.out.print("Enter member name: ");
                     String name = scanner.nextLine();
                     System.out.print("Enter member ID: ");
@@ -42,7 +60,24 @@ public class Gui {
                     Database.addMember(memberId, name);
                     break;
 
-                case 3:
+                case 4:
+                    System.out.print("Enter member ID to delete: ");
+                    String memberIdToDelete = scanner.nextLine();
+
+                    // Get the member by ID from the library (assuming such a method exists)
+                    Member memberToDelete = library.findMemberById(memberIdToDelete);
+
+                    if (memberToDelete != null) {
+                        librarian.removeMember(memberToDelete);   // Remove from library
+                        Database.deleteMember(memberIdToDelete); // Remove from database
+                        System.out.println("Member deleted successfully.");
+                    } else {
+                        System.out.println("No member found with the given ID.");
+                    }
+                    break;
+
+
+                case 5:
                     System.out.print("Enter member ID: ");
                     String memId = scanner.nextLine();
                     Member mem = library.findMemberById(memId);
@@ -60,7 +95,7 @@ public class Gui {
                     }
                     break;
 
-                case 4:
+                case 6:
                     System.out.print("Enter member ID: ");
                     String returnMemId = scanner.nextLine();
                     Member returnMem = library.findMemberById(returnMemId);
@@ -78,14 +113,18 @@ public class Gui {
                     }
                     break;
 
-                case 5:
+                case 7:
                     System.out.println("Available books:");
                     librarian.showBooks();
                     break;
 
-                case 6:
+                case 8:
                     System.out.println("Exiting system. Goodbye!");
                     break;
+
+
+
+
 
                 default:
                     System.out.println("Invalid choice, please try again.");
