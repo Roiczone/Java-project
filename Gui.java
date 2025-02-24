@@ -2,7 +2,6 @@ import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Gui {
-    private static Librarian librarian = new Librarian("John Doe", "L001");
 
     public static void main() {
         TransactionManager transactionManager = new TransactionManager();
