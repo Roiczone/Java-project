@@ -32,21 +32,21 @@ public class Gui {
                     System.out.print("Enter author: ");
                     String author = scanner.nextLine();
                     Book book = new Book(title, author);
-                    librarian.addBook(book);
-                    library.addBook(book);
-                    Database.addBook(book.getId(), book.getTitle(), book.getAuthor());
+//                    Database.addBook(title, author);
+//                    library.addBook(book);
+                    Database.addBook(book.getTitle(), book.getAuthor());
                     break;
 
                 case 2:
-                    System.out.print("Enter book Name to delete: ");
-                    String bookTitle = scanner.nextLine();
+                    System.out.print("Enter bookId to delete: ");
+                    int bookId = scanner.nextInt();
 
-                    Book bookToDelete = library.findBookByTitle(bookTitle);
+                    Book bookToDelete = Database.findBookById(bookId);
 
                     if (bookToDelete != null) {
-                        librarian.removeBook(bookToDelete); // Remove from librarian's collection
-                        library.removeBook(bookToDelete);   // Remove from library's collection
-                        Database.deleteBook(bookTitle);       // Remove from database
+                        //librarian.removeBook(bookToDelete); // Remove from librarian's collection
+                        //library.removeBook(bookToDelete);   // Remove from library's collection
+                        Database.deleteBook(bookId);       // Remove from database
                         System.out.println("Book deleted successfully.");
                     } else {
                         System.out.println("No book found with the given Name.");
@@ -60,7 +60,7 @@ public class Gui {
                     String memberId = scanner.nextLine();
                     Member member = new Member(name, memberId);
                     library.addMember(member);
-                    Database.addMember(memberId, name);
+                    Database.addMember(name);
                     break;
 
                 case 4:
@@ -90,7 +90,7 @@ public class Gui {
                     }
                     System.out.print("Enter book title to borrow: ");
                     String borrowTitle = scanner.nextLine();
-                    String bookId = scanner.nextLine();
+                    bookId = scanner.nextInt();
                     Book borrowBook = library.findBookByTitle(borrowTitle);
                     System.out.print("Enter borrowing days: ");
                     int dueDays = scanner.nextInt();
@@ -130,7 +130,7 @@ public class Gui {
 
                 case 7:
                     System.out.println("Available books:");
-                    librarian.showBooks();
+                    Database.showBooks();
                     break;
 
                 case 8:

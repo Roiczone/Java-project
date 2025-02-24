@@ -20,10 +20,9 @@ public class Database {
     }
 
     public static void createTables() {
-        String booksTable = "CREATE TABLE IF NOT EXISTS books (id TEXT PRIMARY KEY, title TEXT, author TEXT, isAvailable INTEGER);";
-        String membersTable = "CREATE TABLE IF NOT EXISTS members (id TEXT PRIMARY KEY, name TEXT);";
+        String booksTable = "CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT, isAvailable INTEGER);";
+        String membersTable = "CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);";
         String transactionsTable = "CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, memberId TEXT, bookId TEXT, borrowDate TEXT, returnDate TEXT, FOREIGN KEY(memberId) REFERENCES members(id), FOREIGN KEY(bookId) REFERENCES books(id));";
-
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
             stmt.execute(booksTable);
@@ -35,25 +34,62 @@ public class Database {
         }
     }
 
-    public static void addBook(String id, String title, String author) {
-        String sql = "INSERT INTO books(id, title, author, isAvailable) VALUES(?, ?, ?, 1)";
+    public static void addBook(String title, String author) {
+        String sql = "INSERT INTO books(title, author, isAvailable) VALUES(?, ?, 1)";
         try (Connection conn = DriverManager.getConnection(URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            pstmt.setString(2, title);
-            pstmt.setString(3, author);
-            pstmt.executeUpdate();
-            System.out.println("Book added to database.");
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) { // Request generated keys
+
+            pstmt.setString(1, title);
+            pstmt.setString(2, author);
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Retrieve the auto-generated ID
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int generatedId = generatedKeys.getInt(1);
+                        System.out.println("Book added with ID: " + generatedId);
+                    } else {
+                        System.out.println("Failed to retrieve generated ID.");
+                    }
+                }
+            }
         } catch (SQLException e) {
             System.out.println("Error adding book: " + e.getMessage());
         }
     }
 
-    public static void deleteBook(String id) {
+    public static Book findBookById(int id) {
+        String sql = "SELECT * FROM books WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id); // Set the ID parameter
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    // Retrieve book details from the result set
+                    String title = rs.getString("title");
+                    String author = rs.getString("author");
+
+                    // Create and return a Book object
+                    return new Book(title, author);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error finding book by ID: " + e.getMessage());
+        }
+
+        return null; // Book not found
+    }
+
+    public static void deleteBook(int id) {
         String sql = "DELETE FROM books WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
+            pstmt.setInt(1, id);
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("Book deleted successfully.");
@@ -65,12 +101,11 @@ public class Database {
         }
     }
 
-    public static void addMember(String id, String name) {
-        String sql = "INSERT INTO members(id, name) VALUES(?, ?)";
+    public static void addMember(String name) {
+        String sql = "INSERT INTO members(name) VALUES(?)";
         try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            pstmt.setString(2, name);
+            pstmt.setString(1, name);
             pstmt.executeUpdate();
             System.out.println("Member added to database.");
         } catch (SQLException e) {
@@ -95,11 +130,12 @@ public class Database {
 
     public static void showBooks() {
         String sql = "SELECT * FROM books";
+        System.out.println(sql);
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                System.out.println(rs.getString("title") + " by " + rs.getString("author") + " (Available: " + rs.getInt("isAvailable") + ")");
+                System.out.println(rs.getInt("id")+ ". " + rs.getString("title") + " by " + rs.getString("author") + " (Available: " + rs.getInt("isAvailable") + ")");
             }
         } catch (SQLException e) {
             System.out.println("Error retrieving books: " + e.getMessage());
@@ -109,9 +145,10 @@ public class Database {
     public static void main(String[] args) {
         connect();
         createTables();
-        addBook("1", "Java Programming", "James Gosling");
-        addMember("M001", "Alice");
-        deleteMember("1");
+        addBook("Java Programming", "James Gosling");
+        //addMember("Alice");
+        //deleteMember("1");
         showBooks();
     }
+
 }
