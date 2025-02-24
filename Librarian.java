@@ -6,12 +6,14 @@ public class Librarian {
     private String librarianId;
     private List<Book> books;
     private List<Member> members;
+    private List<Transaction> transactions;
 
     public Librarian(String name, String librarianId) {
         this.name = name;
         this.librarianId = librarianId;
         this.books = new ArrayList<>();
         this.members = new ArrayList<>();
+        this.transactions = new ArrayList<>();
     }
 
     public void addBook(Book book) {
@@ -32,6 +34,12 @@ public class Librarian {
     public void showBooks() {
         for (Book book : books) {
             System.out.println(book);
+        }
+    }
+
+    public void ShowTransactions() {
+        for (Transaction transaction : transactions) {
+            System.out.println(transaction);
         }
     }
 }

@@ -135,9 +135,7 @@ public class Gui {
 
                 case 8:
                     System.out.println("All Transactions:");
-                    for (Transaction t : TransactionManager.getAllTransactions()) {
-                        System.out.println(t);
-                    }
+                    librarian.ShowTransactions();
                     break;
 
                 case 9:

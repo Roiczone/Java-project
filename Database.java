@@ -1,7 +1,7 @@
 import java.sql.*;
 
 public class Database {
-    private static final String URL = "jdbc:sqlite:library.db";
+    private static final String URL = "jdbc:sqlite:C:\\Users\\roicz\\OneDrive\\Desktop\\Meine Kurse\\Software engineering\\Java-project\\database\\library.db";
 
 
     public static void connect() {
@@ -43,7 +43,7 @@ public class Database {
             pstmt.setString(2, title);
             pstmt.setString(3, author);
             pstmt.executeUpdate();
-            System.out.println("Book added to database.");
+//            System.out.println("Book added to database.");
         } catch (SQLException e) {
             System.out.println("Error adding book: " + e.getMessage());
         }
@@ -78,6 +78,7 @@ public class Database {
         }
     }
 
+    // DELETE a Member by ID
     // DELETE a Member by ID
     public static void deleteMember(String id) {
         String sql = "DELETE FROM members WHERE (id) VALUES(?)";
