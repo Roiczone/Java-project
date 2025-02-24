@@ -4,7 +4,7 @@ import java.time.temporal.ChronoUnit;
 
 public class Transaction {
     private String transactionId;
-    private String memberId;
+    private int memberId;
     private int bookId;
     private LocalDate borrowDate;
     private LocalDate dueDate;
@@ -14,7 +14,7 @@ public class Transaction {
 
     private static final double FINE_PER_DAY = 5.0; // Fine rate per overdue day
 
-    public Transaction(String transactionId, String memberId, int bookId, LocalDate borrowDate, int dueDays, String type) {
+    public Transaction(String transactionId, int memberId, int bookId, LocalDate borrowDate, int dueDays, String type) {
         this.transactionId = transactionId;
         this.memberId = memberId;
         this.bookId = bookId;
@@ -50,7 +50,7 @@ public class Transaction {
         return transactionId;
     }
 
-    public String getMemberId() {
+    public int getMemberId() {
         return memberId;
     }
 

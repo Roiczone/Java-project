@@ -2,7 +2,6 @@ import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Gui {
-    private static Library library = new Library();
     private static Librarian librarian = new Librarian("John Doe", "L001");
 
     public static void main() {
@@ -65,14 +64,14 @@ public class Gui {
 
                 case 4:
                     System.out.print("Enter member ID to delete: ");
-                    String memberIdToDelete = scanner.nextLine();
+                    int memberIdToDelete = scanner.nextInt();
 
                     // Get the member by ID from the library (assuming such a method exists)
-                    Member memberToDelete = Database.findMemberById(Integer.parseInt(memberIdToDelete));
+                    Member memberToDelete = Database.findMemberById(memberIdToDelete);
 
                     if (memberToDelete != null) {
                         //librarian.removeMember(memberToDelete);   // Remove from library
-                        Database.removeMember(Integer.parseInt(memberIdToDelete)); // Remove from database
+                        Database.removeMember(memberIdToDelete); // Remove from database
                     } else {
                         System.out.println("No member found with the given ID.");
                     }
@@ -81,13 +80,13 @@ public class Gui {
 
                 case 5:
                     System.out.print("Enter member ID: ");
-                    String memId = scanner.nextLine();
-                    Member mem = library.findMemberById(memId);
+                    int memId = scanner.nextInt();
+                    Member mem = Database.findMemberById(memId);
                     if (mem == null) {
                         System.out.println("Member not found!");
                         break;
                     }
-                    System.out.print("Enter book title to borrow: ");
+                    System.out.print("Enter book Id to borrow: ");
                     String borrowTitle = scanner.nextLine();
                     bookId = scanner.nextInt();
                     Book borrowBook = Database.findBookById(bookId);
@@ -107,8 +106,8 @@ public class Gui {
 
                 case 6:
                     System.out.print("Enter member ID: ");
-                    String returnMemId = scanner.nextLine();
-                    Member returnMem = library.findMemberById(returnMemId);
+                    int returnMemId = scanner.nextInt();
+                    Member returnMem = Database.findMemberById(returnMemId);
                     if (returnMem == null) {
                         System.out.println("Member not found!");
                         break;
@@ -134,7 +133,7 @@ public class Gui {
 
                 case 8:
                     System.out.println("All Transactions:");
-                    librarian.ShowTransactions();
+                    Database.showTransactions();
                     break;
                 case 9:
                     System.out.println("Show all Members");

@@ -186,6 +186,37 @@ public class Database {
         }
     }
 
+    public static void showTransactions() {
+        String sql = "SELECT t.id, m.name AS memberName, b.title AS bookTitle, t.borrowDate, t.returnDate " +
+                "FROM transactions t " +
+                "JOIN members m ON t.memberId = m.id " +
+                "JOIN books b ON t.bookId = b.id";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                int transactionId = rs.getInt("id");
+                String memberName = rs.getString("memberName");
+                String bookTitle = rs.getString("bookTitle");
+                String borrowDate = rs.getString("borrowDate");
+                String returnDate = rs.getString("returnDate");
+
+                // Display the transaction details
+                System.out.println("Transaction ID: " + transactionId +
+                        "\nMember: " + memberName +
+                        "\nBook: " + bookTitle +
+                        "\nBorrow Date: " + borrowDate +
+                        "\nReturn Date: " + (returnDate != null ? returnDate : "Not Returned Yet") +
+                        "\n-----------------------------");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving transactions: " + e.getMessage());
+        }
+    }
+
     public static void showMembers() {
         String sql = "SELECT * FROM members";
         System.out.println(sql);
