@@ -43,7 +43,7 @@ public class Database {
             pstmt.setString(2, title);
             pstmt.setString(3, author);
             pstmt.executeUpdate();
-//            System.out.println("Book added to database.");
+            System.out.println("Book added to database.");
         } catch (SQLException e) {
             System.out.println("Error adding book: " + e.getMessage());
         }
@@ -81,7 +81,7 @@ public class Database {
     // DELETE a Member by ID
     // DELETE a Member by ID
     public static void deleteMember(String id) {
-        String sql = "DELETE FROM members WHERE (id) VALUES(?)";
+        String sql = "DELETE FROM members WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
