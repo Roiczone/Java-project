@@ -1,3 +1,4 @@
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Gui {
@@ -5,6 +6,7 @@ public class Gui {
     private static Librarian librarian = new Librarian("John Doe", "L001");
 
     public static void main() {
+        TransactionManager transactionManager = new TransactionManager();
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -17,7 +19,8 @@ public class Gui {
             System.out.println("5. Borrow Book");
             System.out.println("6. Return Book");
             System.out.println("7. Show Books");
-            System.out.println("8. Exit");
+            System.out.println("8. Show Transactions");
+            System.out.println("9. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();  // Consume newline
@@ -87,11 +90,19 @@ public class Gui {
                     }
                     System.out.print("Enter book title to borrow: ");
                     String borrowTitle = scanner.nextLine();
+                    String bookId = scanner.nextLine();
                     Book borrowBook = library.findBookByTitle(borrowTitle);
+                    System.out.print("Enter borrowing days: ");
+                    int dueDays = scanner.nextInt();
+                    scanner.nextLine();
                     if (borrowBook == null) {
                         System.out.println("Book not found!");
                     } else {
                         mem.borrowBook(borrowBook);
+                        String transactionId = "TXN" + System.currentTimeMillis(); // Unique ID based on time
+                        Transaction transaction = new Transaction(transactionId, memId, bookId, LocalDate.now(), dueDays, "Borrow");
+                        TransactionManager.addTransaction(transaction);
+                        System.out.println("Book borrowed successfully with Transaction ID: " + transactionId);
                     }
                     break;
 
@@ -109,7 +120,11 @@ public class Gui {
                     if (returnBook == null) {
                         System.out.println("Book not found!");
                     } else {
-                        returnMem.returnBook(returnBook);
+//                        returnMem.returnBook(returnBook);
+                        System.out.print("Enter return date (YYYY-MM-DD): ");
+                        String dateInput = scanner.nextLine();
+                        LocalDate returnDate = LocalDate.parse(dateInput);
+                        TransactionManager.returnBook(returnTitle, returnDate);
                     }
                     break;
 
@@ -119,17 +134,21 @@ public class Gui {
                     break;
 
                 case 8:
-                    System.out.println("Exiting system. Goodbye!");
+                    System.out.println("All Transactions:");
+                    for (Transaction t : TransactionManager.getAllTransactions()) {
+                        System.out.println(t);
+                    }
                     break;
 
-
-
+                case 9:
+                    System.out.println("Exiting system. Goodbye!");
+                    break;
 
 
                 default:
                     System.out.println("Invalid choice, please try again.");
             }
-        } while (choice != 6);
+        } while (choice != 9);
 
         scanner.close();
     }
