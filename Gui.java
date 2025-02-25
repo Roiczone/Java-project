@@ -107,7 +107,6 @@ public class Gui {
 
                         if (success) {
                             System.out.println("Book borrowed successfully! Due on: " + dueDate);
-                            System.out.println("Book returned successfully!");
                             Database.addTransactionBorrow(memId, bookId, LocalDate.now(), LocalDate.now());
                         } else {
                             System.out.println("Borrowing failed. Please try again later.");
