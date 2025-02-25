@@ -30,8 +30,10 @@ public class Gui {
                     String title = scanner.nextLine();
                     System.out.print("Enter author: ");
                     String author = scanner.nextLine();
-                    Book book = new Book(title, author);
-                    Database.addBook(book.getTitle(), book.getAuthor());
+                    System.out.print("Enter quantity: ");
+                    int quantity = scanner.nextInt();
+                    Book book = new Book(title, author, quantity);
+                    Database.addBook(book.getTitle(), book.getAuthor(), book.getQuantity());
                     break;
 
                 case 2:
@@ -125,7 +127,7 @@ public class Gui {
                         boolean success = Database.returnBook(memId, bookId, LocalDate.now());
 
                         if (success) {
-                            Database.addBook(returnBookID.getTitle(), returnBookID.getAuthor());
+                            Database.addBook(returnBookID.getTitle(), returnBookID.getAuthor(), returnBookID.getQuantity());
                             System.out.println("Book returned successfully!");
                             Database.addTransactionReturn(memId, bookId, LocalDate.now(), transactionDate, LocalDate.now());
                         } else {

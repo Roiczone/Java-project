@@ -24,7 +24,7 @@ public class Database {
     }
 
     public static void createTables() {
-        String booksTable = "CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT, isAvailable INTEGER);";
+        String booksTable = "CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT, quantity Integer, isAvailable INTEGER);";
         String membersTable = "CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);";
         String transactionsTable = "CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, memberId TEXT, bookId TEXT, borrowDate TEXT, dueDate TEXT, returnDate TEXT, FOREIGN KEY(memberId) REFERENCES members(id), FOREIGN KEY(bookId) REFERENCES books(id));";
         try (Connection conn = DriverManager.getConnection(URL);
@@ -38,27 +38,38 @@ public class Database {
         }
     }
 
-    public static void addBook(String title, String author) {
-        String sql = "INSERT INTO books(title, author, isAvailable) VALUES(?, ?, 1)";
+    public static void addBook(String title, String author, int quantity) {
+        // SQL query to check if the book already exists
+        String checkBookSql = "SELECT quantity FROM books WHERE title = ? AND author = ?";
+        // SQL query to add or update the quantity of the book
+        String addBookSql = "INSERT INTO books(title, author, quantity, isAvailable) VALUES(?, ?, ?, 1)";
+        String updateQuantitySql = "UPDATE books SET quantity = quantity + ? WHERE title = ? AND author = ?";
+
         try (Connection conn = DriverManager.getConnection(URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) { // Request generated keys
+             PreparedStatement pstmtCheck = conn.prepareStatement(checkBookSql);
+             PreparedStatement pstmtAdd = conn.prepareStatement(addBookSql);
+             PreparedStatement pstmtUpdate = conn.prepareStatement(updateQuantitySql)) {
 
-            pstmt.setString(1, title);
-            pstmt.setString(2, author);
+            pstmtCheck.setString(1, title);
+            pstmtCheck.setString(2, author);
+            ResultSet rs = pstmtCheck.executeQuery();
 
-            int affectedRows = pstmt.executeUpdate();
-
-            if (affectedRows > 0) {
-                // Retrieve the auto-generated ID
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int generatedId = generatedKeys.getInt(1);
-                        System.out.println("Book added with ID: " + generatedId);
-                    } else {
-                        System.out.println("Failed to retrieve generated ID.");
-                    }
-                }
+            if (rs.next()) {
+                // Book exists, update the quantity
+                pstmtUpdate.setString(1, title);
+                pstmtUpdate.setString(2, author);
+                pstmtUpdate.setInt(3, quantity);
+                pstmtUpdate.executeUpdate();
+                System.out.println("Book quantity updated successfully.");
+            } else {
+                // Book doesn't exist, insert it
+                pstmtAdd.setString(1, title);
+                pstmtAdd.setString(2, author);
+                pstmtAdd.setInt(3, quantity);  // Set the quantity
+                pstmtAdd.executeUpdate();
+                System.out.println("Book added successfully with quantity: " + quantity);
             }
+
         } catch (SQLException e) {
             System.out.println("Error adding book: " + e.getMessage());
         }
@@ -77,9 +88,10 @@ public class Database {
                     // Retrieve book details from the result set
                     String title = rs.getString("title");
                     String author = rs.getString("author");
+                    int quantity = rs.getInt("quantity");
 
                     // Create and return a Book object
-                    return new Book(title, author);
+                    return new Book(title, author, quantity );
                 }
             }
         } catch (SQLException e) {
@@ -107,15 +119,32 @@ public class Database {
 
 
     public static boolean returnBook(int memberId, int bookId, LocalDate returnDate) {
-        String sql = "UPDATE transactions SET returnDate = ? WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";
-        try (Connection conn = DriverManager.getConnection(URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, returnDate.toString());
-            pstmt.setInt(2, memberId);
-            pstmt.setInt(3, bookId);
+        String updateTransactionSql = "UPDATE transactions SET returnDate = ? WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";
+        String updateBookSql = "UPDATE books SET quantity = quantity + 1 WHERE id = ?";  // Increment quantity when returned
 
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmtTransaction = conn.prepareStatement(updateTransactionSql);
+             PreparedStatement pstmtUpdateBook = conn.prepareStatement(updateBookSql)) {
+
+            // Update the return date in the transactions table
+            pstmtTransaction.setString(1, returnDate.toString());
+            pstmtTransaction.setInt(2, memberId);
+            pstmtTransaction.setInt(3, bookId);
+
+            int affectedRows = pstmtTransaction.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Increase book quantity when returned
+                pstmtUpdateBook.setInt(1, bookId);
+                pstmtUpdateBook.executeUpdate();
+
+                System.out.println("Book returned successfully.");
+                return true;
+            } else {
+                System.out.println("Error: Either the book was already returned or the transaction doesn't exist.");
+                return false;
+            }
+
         } catch (SQLException e) {
             System.out.println("Error returning book: " + e.getMessage());
             return false;
@@ -211,7 +240,7 @@ public class Database {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                System.out.println(rs.getInt("id")+ ". " + rs.getString("title") + " by " + rs.getString("author") + " (Available: " + rs.getInt("isAvailable") + ")");
+                System.out.println(rs.getInt("id")+ ". " + rs.getString("title") + " by " + rs.getString("author") + " (Quantity: " + rs.getInt("quantity") + ")");
             }
         } catch (SQLException e) {
             System.out.println("Error retrieving books: " + e.getMessage());
@@ -372,7 +401,7 @@ public class Database {
     public static void main(String[] args) {
         connect();
         createTables();
-        addBook("Java Programming", "James Gosling");
+        addBook("Java Programming", "James Gosling", 3);
         //addMember("Alice");
         //deleteMember("1");
         //showBooks();
