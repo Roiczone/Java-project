@@ -1,4 +1,8 @@
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Database {
     private static final String URL = "jdbc:sqlite:C:\\Users\\roicz\\OneDrive\\Desktop\\Meine Kurse\\Software engineering\\Java-project\\database\\library.db";
@@ -22,7 +26,7 @@ public class Database {
     public static void createTables() {
         String booksTable = "CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, author TEXT, isAvailable INTEGER);";
         String membersTable = "CREATE TABLE IF NOT EXISTS members (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);";
-        String transactionsTable = "CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, memberId TEXT, bookId TEXT, borrowDate TEXT, returnDate TEXT, FOREIGN KEY(memberId) REFERENCES members(id), FOREIGN KEY(bookId) REFERENCES books(id));";
+        String transactionsTable = "CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, memberId TEXT, bookId TEXT, borrowDate TEXT, dueDate TEXT, returnDate TEXT, FOREIGN KEY(memberId) REFERENCES members(id), FOREIGN KEY(bookId) REFERENCES books(id));";
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
             stmt.execute(booksTable);
@@ -98,6 +102,34 @@ public class Database {
             }
         } catch (SQLException e) {
             System.out.println("Error deleting book: " + e.getMessage());
+        }
+    }
+
+
+    public static boolean returnBook(int memberId, int bookId, LocalDate returnDate) {
+        String sql = "UPDATE transactions SET returnDate = ? WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, returnDate.toString());
+            pstmt.setInt(2, memberId);
+            pstmt.setInt(3, bookId);
+
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            System.out.println("Error returning book: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    private static void calculateFine(LocalDate borrowDate, LocalDate returnDate) {
+        long daysLate = java.time.temporal.ChronoUnit.DAYS.between(borrowDate.plusDays(14), returnDate); // Assuming 14-day borrow period
+        if (daysLate > 0) {
+            double fine = daysLate * 1.5; // Example fine rate: $1.5 per late day
+            System.out.println("Book returned late. Fine due: $" + fine);
+        } else {
+            System.out.println("Book returned on time. No fine due.");
         }
     }
 
@@ -186,30 +218,128 @@ public class Database {
         }
     }
 
+    public static void addTransactionBorrow(int memberId, int bookId, LocalDate borrowDate, LocalDate dueDate) {
+        String sql = "INSERT INTO transactions(memberId, bookId, borrowDate, dueDate) VALUES(?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) { // Request generated keys
+
+            pstmt.setInt(1, memberId);
+            pstmt.setInt(2, bookId);
+            pstmt.setString(3, borrowDate.toString());
+
+            // Set dueDate or NULL if it's not provided
+            if (dueDate != null) {
+                pstmt.setString(4, dueDate.toString());
+            } else {
+                pstmt.setNull(4, Types.VARCHAR);
+            }
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Retrieve the auto-generated transaction ID
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int generatedId = generatedKeys.getInt(1);
+                        System.out.println("Transaction added with ID: " + generatedId);
+                    } else {
+                        System.out.println("Failed to retrieve generated transaction ID.");
+                    }
+                }
+            } else {
+                System.out.println("Failed to add the transaction.");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error adding transaction: " + e.getMessage());
+        }
+    }
+
+    public static void addTransactionReturn(int memberId, int bookId, LocalDate borrowDate, LocalDate dueDate, LocalDate returnDate) {
+        String sql = "INSERT INTO transactions(memberId, bookId, borrowDate, returnDate, dueDate) VALUES(?, ?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, memberId);
+            pstmt.setInt(2, bookId);
+            pstmt.setString(3, borrowDate.toString());
+
+            // If returnDate is null, set it as null in the database
+            if (returnDate != null) {
+                pstmt.setString(4, returnDate.toString());
+            } else {
+                pstmt.setNull(4, Types.VARCHAR);}
+            if (dueDate.toString() != null) {
+                pstmt.setString(5, dueDate.toString());
+            } else {
+                pstmt.setNull(5, Types.VARCHAR);
+            }
+
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("Transaction added successfully.");
+            } else {
+                System.out.println("Failed to add the transaction.");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error adding transaction: " + e.getMessage());
+        }
+    }
+
+    public static LocalDate findDueDateByTransactionId(int memberId) {
+        String sql = "SELECT dueDate FROM transactions WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, memberId); // Set the transaction ID parameter
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Retrieve and return the dueDate
+                String dueDateStr = rs.getString("dueDate");
+                if (dueDateStr != null) {
+                    return LocalDate.parse(dueDateStr); // Parse and return the due date as LocalDate
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error finding due date: " + e.getMessage());
+        }
+
+        return null; // Return null if no due date or transaction found
+    }
+
+
+
     public static void showTransactions() {
-        String sql = "SELECT t.id, m.name AS memberName, b.title AS bookTitle, t.borrowDate, t.returnDate " +
-                "FROM transactions t " +
-                "JOIN members m ON t.memberId = m.id " +
-                "JOIN books b ON t.bookId = b.id";
+        String sql = "SELECT * FROM transactions";
+        System.out.println(sql);
 
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                int transactionId = rs.getInt("id");
-                String memberName = rs.getString("memberName");
-                String bookTitle = rs.getString("bookTitle");
+                int id = rs.getInt("id");
+                String memberId = rs.getString("memberId");
+                String bookId = rs.getString("bookId");
                 String borrowDate = rs.getString("borrowDate");
+                String dueDate = rs.getString("dueDate");
                 String returnDate = rs.getString("returnDate");
 
-                // Display the transaction details
-                System.out.println("Transaction ID: " + transactionId +
-                        "\nMember: " + memberName +
-                        "\nBook: " + bookTitle +
-                        "\nBorrow Date: " + borrowDate +
-                        "\nReturn Date: " + (returnDate != null ? returnDate : "Not Returned Yet") +
-                        "\n-----------------------------");
+                // Display transaction details
+                System.out.println(
+                        id + ". Member ID: " + memberId +
+                                ", Book ID: " + bookId +
+                                ", Borrowed: " + borrowDate +
+                                ", Due: " + (dueDate != null ? dueDate : "N/A") +
+                                ", Returned: " + (returnDate != null ? returnDate : "Not returned")
+                );
             }
 
         } catch (SQLException e) {
@@ -246,6 +376,7 @@ public class Database {
         //addMember("Alice");
         //deleteMember("1");
         //showBooks();
+        showTransactions();
 
     }
 

@@ -31,8 +31,6 @@ public class Gui {
                     System.out.print("Enter author: ");
                     String author = scanner.nextLine();
                     Book book = new Book(title, author);
-//                    Database.addBook(title, author);
-//                    library.addBook(book);
                     Database.addBook(book.getTitle(), book.getAuthor());
                     break;
 
@@ -43,8 +41,6 @@ public class Gui {
                     Book bookToDelete = Database.findBookById(bookId);
 
                     if (bookToDelete != null) {
-                        //librarian.removeBook(bookToDelete); // Remove from librarian's collection
-                        //library.removeBook(bookToDelete);   // Remove from library's collection
                         Database.deleteBook(bookId);       // Remove from database
                     } else {
                         System.out.println("");
@@ -54,10 +50,7 @@ public class Gui {
                 case 3:
                     System.out.print("Enter member name: ");
                     String name = scanner.nextLine();
-//                    System.out.print("Enter member ID: ");
-//                    String memberId = scanner.nextLine();
                     Member member = new Member(name);
-//                    library.addMember(member);
                     Database.addMember(member.getName());
                     break;
 
@@ -69,8 +62,7 @@ public class Gui {
                     Member memberToDelete = Database.findMemberById(memberIdToDelete);
 
                     if (memberToDelete != null) {
-                        //librarian.removeMember(memberToDelete);   // Remove from library
-                        Database.removeMember(memberIdToDelete); // Remove from database
+                        Database.removeMember(memberIdToDelete);
                     } else {
                         System.out.println("No member found with the given ID.");
                     }
@@ -86,7 +78,6 @@ public class Gui {
                         break;
                     }
                     System.out.print("Enter book Id to borrow: ");
-                    String borrowTitle = scanner.nextLine();
                     bookId = scanner.nextInt();
                     Book borrowBook = Database.findBookById(bookId);
                     System.out.print("Enter borrowing days: ");
@@ -95,33 +86,53 @@ public class Gui {
                     if (borrowBook == null) {
                         System.out.println("Book not found!");
                     } else {
+                        System.out.println("Book borrowed successfully!");
                         mem.borrowBook(borrowBook);
-                        String transactionId = "TXN" + System.currentTimeMillis(); // Unique ID based on time
-                        Transaction transaction = new Transaction(transactionId, memId, bookId, LocalDate.now(), dueDays, "Borrow");
-                        TransactionManager.addTransaction(transaction);
-                        System.out.println("Book borrowed successfully with Transaction ID: " + transactionId);
+                        //String transactionId = "TXN" + System.currentTimeMillis(); // Unique ID based on time
+                        //Transaction transaction = new Transaction(transactionId, memId, bookId, LocalDate.now(), dueDays, "Borrow");
+                        Database.addTransactionBorrow(memId, bookId, LocalDate.now(), LocalDate.now().plusDays(dueDays));
+                       // System.out.println("Book borrowed successfully with Transaction ID: " + transactionId);
                     }
                     break;
 
                 case 6:
+                    System.out.print("Enter transaction Id: ");
+                    int transactionId = scanner.nextInt();
+                    LocalDate transactionDate = Database.findDueDateByTransactionId(transactionId);
+                    if (transactionDate == null) {
+                        System.out.println("Transaction not found!");
+                        break;
+                    }
                     System.out.print("Enter member ID: ");
-                    int returnMemId = scanner.nextInt();
-                    Member returnMem = Database.findMemberById(returnMemId);
-                    if (returnMem == null) {
+                    memId = scanner.nextInt();
+                    mem = Database.findMemberById(memId);
+                    if (mem == null) {
                         System.out.println("Member not found!");
                         break;
                     }
-                    System.out.print("Enter book title to return: ");
+                    System.out.print("Enter book Id to return: ");
                     bookId = scanner.nextInt();
-                    Book returnBook = Database.findBookById(bookId);
-                    if (returnBook == null) {
+                    Book returnBookID = Database.findBookById(bookId);
+                    scanner.nextLine(); // Consume the newline character
+                    if (returnBookID == null) {
                         System.out.println("Book not found!");
-                    } else {
-//                        returnMem.returnBook(returnBook);
-                        System.out.print("Enter return date (YYYY-MM-DD): ");
-                        String dateInput = scanner.nextLine();
-                        LocalDate returnDate = LocalDate.parse(dateInput);
-                        TransactionManager.returnBook(bookId, returnDate);
+                        break;
+                    }
+                    try {
+//                        LocalDate returnDate = LocalDate.parse(dateInput);
+
+                        // Call the database function to handle book return
+                        boolean success = Database.returnBook(memId, bookId, LocalDate.now());
+
+                        if (success) {
+                            Database.addBook(returnBookID.getTitle(), returnBookID.getAuthor());
+                            System.out.println("Book returned successfully!");
+                            Database.addTransactionReturn(memId, bookId, LocalDate.now(), transactionDate, LocalDate.now());
+                        } else {
+                            System.out.println("Book return failed. Either the book was already returned or the transaction doesn't exist.");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Invalid date format. Please use YYYY-MM-DD.");
                     }
                     break;
 

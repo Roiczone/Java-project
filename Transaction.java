@@ -1,9 +1,8 @@
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 public class Transaction {
-    private String transactionId;
+    private int transactionId;
     private int memberId;
     private int bookId;
     private LocalDate borrowDate;
@@ -14,21 +13,15 @@ public class Transaction {
 
     private static final double FINE_PER_DAY = 5.0; // Fine rate per overdue day
 
-    public Transaction(String transactionId, int memberId, int bookId, LocalDate borrowDate, int dueDays, String type) {
+    public Transaction(int transactionId, int memberId, int bookId, LocalDate borrowDate, int dueDays, String type) {
         this.transactionId = transactionId;
         this.memberId = memberId;
         this.bookId = bookId;
         this.borrowDate = borrowDate;
         this.dueDate = borrowDate.plusDays(dueDays); // Set due date based on the number of due days
         this.type = type;
+        this.returnDate = borrowDate.plusDays(1);
         this.fineAmount = 0.0;
-    }
-
-    // Method to return the book and calculate fine automatically
-    public void returnBook(LocalDate returnDate) {
-        this.returnDate = returnDate;
-        this.type = "Return";
-        calculateFine();
     }
 
     // Calculate the fine based on overdue days
@@ -46,7 +39,7 @@ public class Transaction {
         return fineAmount;
     }
 
-    public String getTransactionId() {
+    public int getTransactionId() {
         return transactionId;
     }
 
