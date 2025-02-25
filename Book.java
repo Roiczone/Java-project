@@ -15,14 +15,10 @@ public class Book {
         this.quantity = quantity;
     }
 
-    public String getId() { return id; }
+
     public String getTitle() { return title; }
     public String getAuthor() { return author; }
-    public boolean isAvailable() { return isAvailable; }
     public int getQuantity() { return quantity; }
-
-    public void borrowBook() { isAvailable = false; }
-    public void returnBook() { isAvailable = true; }
 
     @Override
     public String toString() {

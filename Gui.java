@@ -4,7 +4,6 @@ import java.util.Scanner;
 public class Gui {
 
     public static void main() {
-        TransactionManager transactionManager = new TransactionManager();
         Scanner scanner = new Scanner(System.in);
         int choice;
 
@@ -12,20 +11,20 @@ public class Gui {
             System.out.println("\n===== Library Management System =====");
             System.out.println("1. Add Book");
             System.out.println("2. delete Book");
-            System.out.println("3. Add Member");
-            System.out.println("4. Delete member");
-            System.out.println("5. Borrow Book");
-            System.out.println("6. Return Book");
+            System.out.println("3. Borrow Book");
+            System.out.println("4. Return Book");
+            System.out.println("5. Add Member");
+            System.out.println("6. Delete member");
             System.out.println("7. Show Books");
-            System.out.println("8. Show Transactions");
-            System.out.println("9. Show All members");
+            System.out.println("8. Show All members");
+            System.out.println("9. Show Transactions");
             System.out.println("10. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();  // Consume newline
 
             switch (choice) {
-                case 1:
+                case 1:     //Add Book to Database
                     System.out.print("Enter book title: ");
                     String title = scanner.nextLine();
                     System.out.print("Enter author: ");
@@ -36,42 +35,20 @@ public class Gui {
                     Database.addBook(book.getTitle(), book.getAuthor(), book.getQuantity());
                     break;
 
-                case 2:
+                case 2:      //Delete Book from Database
                     System.out.print("Enter bookId to delete: ");
                     int bookId = scanner.nextInt();
 
                     Book bookToDelete = Database.findBookById(bookId);
 
                     if (bookToDelete != null) {
-                        Database.deleteBook(bookId);       // Remove from database
+                        Database.deleteBook(bookId);
                     } else {
                         System.out.println("");
                     }
                     break;
 
-                case 3:
-                    System.out.print("Enter member name: ");
-                    String name = scanner.nextLine();
-                    Member member = new Member(name);
-                    Database.addMember(member.getName());
-                    break;
-
-                case 4:
-                    System.out.print("Enter member ID to delete: ");
-                    int memberIdToDelete = scanner.nextInt();
-
-                    // Get the member by ID from the library (assuming such a method exists)
-                    Member memberToDelete = Database.findMemberById(memberIdToDelete);
-
-                    if (memberToDelete != null) {
-                        Database.removeMember(memberIdToDelete);
-                    } else {
-                        System.out.println("No member found with the given ID.");
-                    }
-                    break;
-
-
-                case 5:
+                case 3:         //Borrow Book
                     System.out.print("Enter member ID: ");
                     int memId = scanner.nextInt();
                     Member mem = Database.findMemberById(memId);
@@ -84,7 +61,7 @@ public class Gui {
                     System.out.print("Enter book ID to borrow: ");
                     bookId = scanner.nextInt();
                     Book borrowBook = Database.findBookById(bookId);
-                    scanner.nextLine(); // Consume the newline character
+                    scanner.nextLine();
 
                     if (borrowBook == null) {
                         System.out.println("Book not found!");
@@ -101,13 +78,10 @@ public class Gui {
                     try {
                         LocalDate borrowDate = LocalDate.now();
                         LocalDate dueDate = LocalDate.parse(dateInput);
-
-                        // Call the borrowBook method
                         boolean success = Database.borrowBook(memId, bookId, borrowDate, dueDate);
 
                         if (success) {
                             System.out.println("Book borrowed successfully! Due on: " + dueDate);
-                            Database.addTransactionBorrow(memId, bookId, LocalDate.now(), LocalDate.now());
                         } else {
                             System.out.println("Borrowing failed. Please try again later.");
                         }
@@ -118,7 +92,7 @@ public class Gui {
                     break;
 
 
-                case 6:
+                case 4:         //Return Book
                     System.out.print("Enter transaction Id: ");
                     int transactionId = scanner.nextInt();
                     LocalDate transactionDate = Database.findDueDateByTransactionId(transactionId);
@@ -136,15 +110,12 @@ public class Gui {
                     System.out.print("Enter book Id to return: ");
                     bookId = scanner.nextInt();
                     Book returnBookID = Database.findBookById(bookId);
-                    scanner.nextLine(); // Consume the newline character
+                    scanner.nextLine();
                     if (returnBookID == null) {
                         System.out.println("Book not found!");
                         break;
                     }
                     try {
-//                        LocalDate returnDate = LocalDate.parse(dateInput);
-
-                        // Call the database function to handle book return
                         boolean success = Database.returnBook(memId, bookId, LocalDate.now());
 
                         if (success) {
@@ -159,18 +130,41 @@ public class Gui {
                     }
                     break;
 
-                case 7:
+                case 5:        //Add Member to Database
+                    System.out.print("Enter member name: ");
+                    String name = scanner.nextLine();
+                    Member member = new Member(name);
+                    Database.addMember(member.getName());
+                    break;
+
+                case 6:          //Delete Member from Database
+                    System.out.print("Enter member ID to delete: ");
+                    int memberIdToDelete = scanner.nextInt();
+                    Member memberToDelete = Database.findMemberById(memberIdToDelete);
+
+                    if (memberToDelete != null) {
+                        Database.removeMember(memberIdToDelete);
+                    } else {
+                        System.out.println("No member found with the given ID.");
+                    }
+                    break;
+
+
+
+
+                case 7:         //Show Books
                     System.out.println("Available books:");
                     Database.showBooks();
                     break;
 
-                case 8:
-                    System.out.println("All Transactions:");
-                    Database.showTransactions();
-                    break;
-                case 9:
+                case 8:         //Show Members
                     System.out.println("Show all Members");
                     Database.showMembers();
+                    break;
+
+                case 9:        //Show Transactions
+                    System.out.println("All Transactions:");
+                    Database.showTransactions();
                     break;
 
                 case 10:

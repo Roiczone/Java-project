@@ -1,8 +1,5 @@
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Database {
     private static final String URL = "jdbc:sqlite:C:\\Users\\roicz\\OneDrive\\Desktop\\Meine Kurse\\Software engineering\\Java-project\\database\\library.db";
@@ -56,9 +53,9 @@ public class Database {
 
             if (rs.next()) {
                 // Book exists, update the quantity
-                pstmtUpdate.setString(1, title);
-                pstmtUpdate.setString(2, author);
-                pstmtUpdate.setInt(3, quantity);
+                pstmtUpdate.setInt(1, quantity);
+                pstmtUpdate.setString(2, title);
+                pstmtUpdate.setString(3, author);
                 pstmtUpdate.executeUpdate();
                 System.out.println("Book quantity updated successfully.");
             } else {
@@ -139,7 +136,6 @@ public class Database {
                 int bookUpdated = pstmtUpdateBook.executeUpdate();
 
                 if (bookUpdated > 0) {
-                    System.out.println("Book borrowed successfully.");
                     return true;
                 } else {
                     System.out.println("Book is not available or out of stock.");
@@ -158,28 +154,47 @@ public class Database {
 
     public static boolean returnBook(int memberId, int bookId, LocalDate returnDate) {
         String updateTransactionSql = "UPDATE transactions SET returnDate = ? WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";
-        String updateBookSql = "UPDATE books SET quantity = quantity + 1 WHERE id = ?";  // Increment quantity when returned
+        String updateBookSql = "UPDATE books SET quantity = quantity + 1 WHERE id = ?";
+        String getBorrowDateSql = "SELECT borrowDate, dueDate FROM transactions WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";
 
         try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement pstmtTransaction = conn.prepareStatement(updateTransactionSql);
-             PreparedStatement pstmtUpdateBook = conn.prepareStatement(updateBookSql)) {
+             PreparedStatement pstmtUpdateBook = conn.prepareStatement(updateBookSql);
+             PreparedStatement pstmtGetBorrowDate = conn.prepareStatement(getBorrowDateSql)) {
 
-            // Update the return date in the transactions table
-            pstmtTransaction.setString(1, returnDate.toString());
-            pstmtTransaction.setInt(2, memberId);
-            pstmtTransaction.setInt(3, bookId);
+            // Retrieve borrow date & due date first
+            pstmtGetBorrowDate.setInt(1, memberId);
+            pstmtGetBorrowDate.setInt(2, bookId);
+            ResultSet rs = pstmtGetBorrowDate.executeQuery();
 
-            int affectedRows = pstmtTransaction.executeUpdate();
+            if (rs.next()) {
+                LocalDate borrowDate = LocalDate.parse(rs.getString("borrowDate"));
+                LocalDate dueDate = rs.getString("dueDate") != null ? LocalDate.parse(rs.getString("dueDate")) : borrowDate.plusDays(14);
 
-            if (affectedRows > 0) {
-                // Increase book quantity when returned
-                pstmtUpdateBook.setInt(1, bookId);
-                pstmtUpdateBook.executeUpdate();
+                // Update the transaction return date
+                pstmtTransaction.setString(1, returnDate.toString());
+                pstmtTransaction.setInt(2, memberId);
+                pstmtTransaction.setInt(3, bookId);
 
-                System.out.println("Book returned successfully.");
-                return true;
+                int affectedRows = pstmtTransaction.executeUpdate();
+
+                if (affectedRows > 0) {
+                    // Increase book quantity when returned
+                    pstmtUpdateBook.setInt(1, bookId);
+                    pstmtUpdateBook.executeUpdate();
+
+                    System.out.println("Book returned successfully.");
+
+                    // Call fine calculation method
+                    calculateFine(borrowDate, returnDate);
+
+                    return true;
+                } else {
+                    System.out.println("Error: Either the book was already returned or the transaction doesn't exist.");
+                    return false;
+                }
             } else {
-                System.out.println("Error: Either the book was already returned or the transaction doesn't exist.");
+                System.out.println("No matching borrow transaction found.");
                 return false;
             }
 
@@ -188,6 +203,7 @@ public class Database {
             return false;
         }
     }
+
 
 
     private static void calculateFine(LocalDate borrowDate, LocalDate returnDate) {
@@ -249,8 +265,6 @@ public class Database {
         return null; // Return null if no member found
     }
 
-    // DELETE a Member by ID
-    // DELETE a Member by ID
     public static void removeMember(int memberId) {
         String sql = "DELETE FROM members WHERE id = ?";
 
@@ -270,20 +284,6 @@ public class Database {
         }
     }
 
-
-    public static void showBooks() {
-        String sql = "SELECT * FROM books";
-        System.out.println(sql);
-        try (Connection conn = DriverManager.getConnection(URL);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                System.out.println(rs.getInt("id")+ ". " + rs.getString("title") + " by " + rs.getString("author") + " (Quantity: " + rs.getInt("quantity") + ")");
-            }
-        } catch (SQLException e) {
-            System.out.println("Error retrieving books: " + e.getMessage());
-        }
-    }
 
     public static void addTransactionBorrow(int memberId, int bookId, LocalDate borrowDate, LocalDate dueDate) {
         String sql = "INSERT INTO transactions(memberId, bookId, borrowDate, dueDate) VALUES(?, ?, ?, ?)";
@@ -323,6 +323,30 @@ public class Database {
         }
     }
 
+    public static LocalDate findDueDateByTransactionId(int memberId) {
+        String sql = "SELECT dueDate FROM transactions WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, memberId); // Set the transaction ID parameter
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Retrieve and return the dueDate
+                String dueDateStr = rs.getString("dueDate");
+                if (dueDateStr != null) {
+                    return LocalDate.parse(dueDateStr); // Parse and return the due date as LocalDate
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error finding due date: " + e.getMessage());
+        }
+
+        return null; // Return null if no due date or transaction found
+    }
+
     public static void addTransactionReturn(int memberId, int bookId, LocalDate borrowDate, LocalDate dueDate, LocalDate returnDate) {
         String sql = "INSERT INTO transactions(memberId, bookId, borrowDate, returnDate, dueDate) VALUES(?, ?, ?, ?, ?)";
 
@@ -357,31 +381,42 @@ public class Database {
         }
     }
 
-    public static LocalDate findDueDateByTransactionId(int memberId) {
-        String sql = "SELECT dueDate FROM transactions WHERE id = ?";
+
+    public static void showBooks() {
+        String sql = "SELECT * FROM books";
+        System.out.println(sql);
 
         try (Connection conn = DriverManager.getConnection(URL);
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                System.out.println(rs.getInt("id")+ ". " + rs.getString("title") + " by " + rs.getString("author") + " (Quantity: " + rs.getInt("quantity") + ")");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error retrieving books: " + e.getMessage());
+        }
+    }
 
-            pstmt.setInt(1, memberId); // Set the transaction ID parameter
-            ResultSet rs = pstmt.executeQuery();
+    public static void showMembers() {
+        String sql = "SELECT * FROM members";
+        System.out.println(sql);
 
-            if (rs.next()) {
-                // Retrieve and return the dueDate
-                String dueDateStr = rs.getString("dueDate");
-                if (dueDateStr != null) {
-                    return LocalDate.parse(dueDateStr); // Parse and return the due date as LocalDate
-                }
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+
+                // Display member details
+                System.out.println(id + ". " + name);
             }
 
         } catch (SQLException e) {
-            System.out.println("Error finding due date: " + e.getMessage());
+            System.out.println("Error retrieving members: " + e.getMessage());
         }
-
-        return null; // Return null if no due date or transaction found
     }
-
-
 
     public static void showTransactions() {
         String sql = "SELECT * FROM transactions";
@@ -414,36 +449,15 @@ public class Database {
         }
     }
 
-    public static void showMembers() {
-        String sql = "SELECT * FROM members";
-        System.out.println(sql);
-
-        try (Connection conn = DriverManager.getConnection(URL);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-
-                // Display member details
-                System.out.println(id + ". " + name);
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Error retrieving members: " + e.getMessage());
-        }
-    }
-
 
     public static void main(String[] args) {
         connect();
         createTables();
-        addBook("Java Programming", "James Gosling", 3);
+        //addBook("Java Programming", "James Gosling", 3);
         //addMember("Alice");
         //deleteMember("1");
         //showBooks();
-        showTransactions();
+        //showTransactions();
 
     }
 
