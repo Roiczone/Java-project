@@ -117,6 +117,44 @@ public class Database {
         }
     }
 
+    public static boolean borrowBook(int memberId, int bookId, LocalDate borrowDate, LocalDate dueDate) {
+        String insertTransactionSql = "INSERT INTO transactions (memberId, bookId, borrowDate, dueDate) VALUES (?, ?, ?, ?)";
+        String updateBookSql = "UPDATE books SET quantity = quantity - 1 WHERE id = ? AND quantity > 0"; // Decrease quantity
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             PreparedStatement pstmtTransaction = conn.prepareStatement(insertTransactionSql);
+             PreparedStatement pstmtUpdateBook = conn.prepareStatement(updateBookSql)) {
+
+            // Step 1: Record the borrowing transaction first
+            pstmtTransaction.setInt(1, memberId);
+            pstmtTransaction.setInt(2, bookId);
+            pstmtTransaction.setString(3, borrowDate.toString());
+            pstmtTransaction.setString(4, dueDate.toString());
+
+            int transactionInserted = pstmtTransaction.executeUpdate();
+
+            if (transactionInserted > 0) {
+                // Step 2: Decrease the book quantity only after successful transaction
+                pstmtUpdateBook.setInt(1, bookId);
+                int bookUpdated = pstmtUpdateBook.executeUpdate();
+
+                if (bookUpdated > 0) {
+                    System.out.println("Book borrowed successfully.");
+                    return true;
+                } else {
+                    System.out.println("Book is not available or out of stock.");
+                    return false;
+                }
+            } else {
+                System.out.println("Failed to record borrowing transaction.");
+                return false;
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error borrowing book: " + e.getMessage());
+            return false;
+        }
+    }
 
     public static boolean returnBook(int memberId, int bookId, LocalDate returnDate) {
         String updateTransactionSql = "UPDATE transactions SET returnDate = ? WHERE memberId = ? AND bookId = ? AND returnDate IS NULL";

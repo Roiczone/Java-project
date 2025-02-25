@@ -75,27 +75,49 @@ public class Gui {
                     System.out.print("Enter member ID: ");
                     int memId = scanner.nextInt();
                     Member mem = Database.findMemberById(memId);
+
                     if (mem == null) {
                         System.out.println("Member not found!");
                         break;
                     }
-                    System.out.print("Enter book Id to borrow: ");
+
+                    System.out.print("Enter book ID to borrow: ");
                     bookId = scanner.nextInt();
                     Book borrowBook = Database.findBookById(bookId);
-                    System.out.print("Enter borrowing days: ");
-                    int dueDays = scanner.nextInt();
-                    scanner.nextLine();
+                    scanner.nextLine(); // Consume the newline character
+
                     if (borrowBook == null) {
                         System.out.println("Book not found!");
-                    } else {
-                        System.out.println("Book borrowed successfully!");
-                        mem.borrowBook(borrowBook);
-                        //String transactionId = "TXN" + System.currentTimeMillis(); // Unique ID based on time
-                        //Transaction transaction = new Transaction(transactionId, memId, bookId, LocalDate.now(), dueDays, "Borrow");
-                        Database.addTransactionBorrow(memId, bookId, LocalDate.now(), LocalDate.now().plusDays(dueDays));
-                       // System.out.println("Book borrowed successfully with Transaction ID: " + transactionId);
+                        break;
+                    }
+
+                    if (borrowBook.getQuantity() <= 0) {
+                        System.out.println("Book is out of stock!");
+                        break;
+                    }
+
+                    System.out.print("Enter due date (YYYY-MM-DD): ");
+                    String dateInput = scanner.nextLine();
+                    try {
+                        LocalDate borrowDate = LocalDate.now();
+                        LocalDate dueDate = LocalDate.parse(dateInput);
+
+                        // Call the borrowBook method
+                        boolean success = Database.borrowBook(memId, bookId, borrowDate, dueDate);
+
+                        if (success) {
+                            System.out.println("Book borrowed successfully! Due on: " + dueDate);
+                            System.out.println("Book returned successfully!");
+                            Database.addTransactionBorrow(memId, bookId, LocalDate.now(), LocalDate.now());
+                        } else {
+                            System.out.println("Borrowing failed. Please try again later.");
+                        }
+
+                    } catch (Exception e) {
+                        System.out.println("Invalid date format. Please use YYYY-MM-DD.");
                     }
                     break;
+
 
                 case 6:
                     System.out.print("Enter transaction Id: ");
