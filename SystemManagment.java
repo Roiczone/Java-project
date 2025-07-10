@@ -21,10 +21,10 @@ public class SystemManagment {
             System.out.println("10. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
-            scanner.nextLine();  // Consume newline
+            scanner.nextLine();
 
             switch (choice) {
-                case 1:     //Add Book to Database
+                case 1:
                     System.out.print("Enter book title: ");
                     String title = scanner.nextLine();
                     System.out.print("Enter author: ");
@@ -35,7 +35,7 @@ public class SystemManagment {
                     Database.addBook(book.getTitle(), book.getAuthor(), book.getQuantity());
                     break;
 
-                case 2:      //Delete Book from Database
+                case 2:
                     System.out.print("Enter bookId to delete: ");
                     int bookId = scanner.nextInt();
 
@@ -48,7 +48,7 @@ public class SystemManagment {
                     }
                     break;
 
-                case 3:         //Borrow Book
+                case 3:
                     System.out.print("Enter member ID: ");
                     int memId = scanner.nextInt();
                     Member mem = Database.findMemberById(memId);
@@ -92,7 +92,7 @@ public class SystemManagment {
                     break;
 
 
-                case 4:         //Return Book
+                case 4:
                     System.out.print("Enter transaction Id: ");
                     int transactionId = scanner.nextInt();
                     LocalDate transactionDate = Database.findDueDateByTransactionId(transactionId);
@@ -130,14 +130,14 @@ public class SystemManagment {
                     }
                     break;
 
-                case 5:        //Add Member to Database
+                case 5:
                     System.out.print("Enter member name: ");
                     String name = scanner.nextLine();
                     Member member = new Member(name);
                     Database.addMember(member.getName());
                     break;
 
-                case 6:          //Delete Member from Database
+                case 6:
                     System.out.print("Enter member ID to delete: ");
                     int memberIdToDelete = scanner.nextInt();
                     Member memberToDelete = Database.findMemberById(memberIdToDelete);
@@ -152,17 +152,17 @@ public class SystemManagment {
 
 
 
-                case 7:         //Show Books
+                case 7:
                     System.out.println("Available books:");
                     Database.showBooks();
                     break;
 
-                case 8:         //Show Members
+                case 8:
                     System.out.println("Show all Members");
                     Database.showMembers();
                     break;
 
-                case 9:        //Show Transactions
+                case 9:
                     System.out.println("All Transactions:");
                     Database.showTransactions();
                     break;
